@@ -1,0 +1,138 @@
+use std::time::Duration;
+
+use base64::Engine;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use reqwest::Client;
+use serde_json::{json, Value};
+use tokio::{sync::Mutex, time::sleep};
+
+use crate::{error::TwitchError, gql::{playback_access_token}};
+
+const DEVICE_URL: &'static str = "https://id.twitch.tv/oauth2/device";
+const TOKEN_URL: &'static str = "https://id.twitch.tv/oauth2/token";
+
+async fn validate (client: &Client, oauth: &str) -> Result<String, TwitchError> {
+    let url = "https://id.twitch.tv/oauth2/validate";
+    let get_user_id = client.get(url).header("Authorization", format!("OAuth {}", oauth)).send().await?;
+    let get_user_id: Value = get_user_id.json().await?;
+    if let Some(user_id) = get_user_id.get("user_id").and_then(|s| s.as_str()) {
+        return Ok(user_id.to_string());
+    } else {
+        return Err(TwitchError::TwitchError("Not found user_id".into()));
+    }
+}
+
+pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String), TwitchError> {
+    let payload = [
+        ("client_id", client_id),
+        ("scopes", "")
+    ];
+    let response = client.post(DEVICE_URL).form(&payload).send().await?;
+    if !response.status().is_success() {
+        return Err(TwitchError::HttpError(response.status().as_u16()));
+    }
+    let response: Value = response.json().await?;
+    let device_code = response.get("device_code").ok_or_else(|| TwitchError::MissingField("device_code".into()))?;
+    let user_code = response.get("user_code").ok_or_else(|| TwitchError::MissingField("user_code".into()))?;
+    let interval = response.get("interval").ok_or_else(|| TwitchError::MissingField("interval".into()))?;
+    let verification_uri = response.get("verification_uri").ok_or_else(|| TwitchError::MissingField("verification_uri".into()))?;
+    let payload = [
+        ("client_id", client_id),
+        ("device_code", device_code.as_str().unwrap()),
+        ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
+    ];
+    println!("Please open the following link in your browser:\n{}\nThen enter this code: {}", verification_uri, user_code);
+    loop {
+        let status = client.post(TOKEN_URL).form(&payload).send().await?;
+        if !status.status().is_success() && !status.status().as_u16() == 400 {
+            return Err(TwitchError::HttpError(status.status().as_u16()));
+        }
+        let status: Value = status.json().await?;
+        if let Some(access_token) = status.get("access_token").and_then(|s| s.as_str()) {
+            let user_id = validate(&client, &access_token).await?;
+            return Ok((access_token.to_string(), user_id));
+        } else {
+            sleep(Duration::from_secs(interval.as_u64().unwrap())).await;
+        }
+    }
+}
+
+async fn _watch_stream (client: &Client, channel_login: &str) -> Result<(), TwitchError> {
+    let playback = playback_access_token(client, channel_login).await?;
+    let url = format!("https://usher.ttvnw.net/api/channel/hls/{}.m3u8", channel_login);
+    let get_available_qualities = client.get(url).query(&[("sig", &playback.signature), ("token", &playback.value)]).send().await?;
+    let text = get_available_qualities.text().await?;
+    if let Ok(json) = serde_json::from_str::<Value>(&text) {
+        if let Some(error) = json.get(0).and_then(|s| s.get("error")) {
+            return Err(TwitchError::TwitchError(error.to_string()));
+        }
+    }
+    println!("{}", text);
+    Ok(())
+}
+
+static SPADE_URL: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
+
+async fn get_spade_url (spade: &str, client: &Client) -> Result<(), TwitchError> {
+    let settings_pattern = Regex::new(r#"src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)""#).unwrap();
+    let spade_pattern = Regex::new(r#""spade_?url": ?"(https://video-edge-[.\w\-/]+\.ts(?:\?allow_stream=true)?)""#).unwrap();
+    
+    let mut lock = SPADE_URL.lock().await;
+    if lock.is_empty() {
+        if let Some(caps) = spade_pattern.captures(&spade) {
+            let spade_url = caps.get(1).unwrap().as_str();
+            *lock = spade_url.to_string();
+            return Ok(());
+        }
+        if let Some(caps) = settings_pattern.captures(&spade) {
+            let settings_url = caps.get(1).unwrap().as_str();
+            let settings_js = client.get(settings_url).send().await?.text().await?;
+            if let Some(caps2) = spade_pattern.captures(&settings_js) {
+                let spade_url = caps2.get(1).unwrap().as_str();
+                *lock = spade_url.to_string();
+                return Ok(());
+            } else {
+                return Err(TwitchError::TwitchError("Error while spade_url extraction: step #2".into()));
+            }
+        } else {
+            return Err(TwitchError::TwitchError("Error while spade_url extraction: step #1".into()));
+        }
+    } else {
+        return Ok(());
+    }
+}
+
+pub async fn send_watch (client: &Client, user_id: &str, client_url: &str, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
+    let url = format!("{}/{}", client_url, channel_login);
+    let get_spade = client.get(url).send().await?;
+    let spade = get_spade.text().await?;
+    get_spade_url(&spade, &client).await?;
+    let spade_url = SPADE_URL.lock().await;
+    let payload = json!([
+        {
+            "event": "minute-watched",
+            "properties": {
+                "broadcast_id": broadcast_id,
+                "channel_id": channel_id,
+                "channel": channel_login,
+                "hidden": false,
+                "live": true,
+                "location": "channel",
+                "logged_in": true,
+                "muted": false,
+                "player": "site",
+                "user_id": user_id,
+            }
+        }
+    ]);
+    let payload = serde_json::to_string(&payload)?;
+    let base64 = base64::engine::general_purpose::STANDARD.encode(&payload);
+    let send_watch = client.post(spade_url.to_string()).form(&[("data", base64)]).send().await?;
+    let status = send_watch.status();
+    if status == 204 {
+        return Ok(());
+    } else {
+        return Err(TwitchError::HttpError(status.as_u16()));
+    }
+}
