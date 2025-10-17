@@ -19,8 +19,12 @@ pub enum SystemError {
 pub enum TwitchError {
     #[error("Twitch response JSON is missing the field: {0}")]
     MissingField(String),
+    #[error("Error Twitch response JSON: {0}")]
+    JsonError(#[from] serde_json::Error),
     #[error("HTTP error: {0}")]
     HttpError(u16),
     #[error("Failed reqwest Twitch response: {0}")]
     ReqwestProblem(#[from] reqwest::Error),
+    #[error("Twitch error: {0}")]
+    TwitchError(String)
 }
