@@ -1,3 +1,9 @@
+//! # TWITCH-GQL-RS
+//!
+//! A small, lightweight implementation of a *GraphQL* client for interacting with **Twitch's GraphQL API**.
+//! Designed for simple queries, typed responses, and easy integration into async Rust applications.
+//!
+
 use std::{error::Error, path::Path};
 
 use reqwest::{header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, CACHE_CONTROL, ORIGIN, PRAGMA, REFERER, USER_AGENT}, Client, ClientBuilder};
@@ -50,6 +56,8 @@ async fn get_headers(
 }
 
 impl TwitchClient {
+    /// Saves the current state of the structure to a JSON file at the specified path.
+    /// Returns an error if the file already exists or if serialization fails.
     pub async fn save_file(self, path: &Path) -> Result<Self, SystemError> {
         if !path.exists() {
             let info = match serde_json::to_string_pretty(&self) {
@@ -63,6 +71,8 @@ impl TwitchClient {
         }
     }
 
+    /// Loads the structure from a JSON file at the specified path.
+    /// Returns an error if the file is not found or if deserialization fails.
     pub async fn load_from_file(path: &Path) -> Result<Self, SystemError> {
         if !path.exists() {
             return Err(SystemError::FileNotFound);
@@ -81,6 +91,7 @@ impl TwitchClient {
         Ok(load)
     }
 
+    /// Creates a new `TwitchClient` instance without an access token.
     pub async fn new(client_id: &str, user_agent: &str, client_url: &str) -> Result<Self, SystemError> {
         let headers = get_headers(client_id, user_agent, None).await?;
         let client = ClientBuilder::new().default_headers(headers).build()?;
@@ -96,6 +107,8 @@ impl TwitchClient {
     }
 
     // API
+    /// Authenticates the `TwitchClient`.
+    /// On success, stores the access token and user ID in the client.
     pub async fn auth(&mut self) -> Result<(), TwitchError> {
         let auth = auth(&self.client, &self.client_id).await?;
         self.access_token = Some(auth.0);
@@ -103,6 +116,7 @@ impl TwitchClient {
         Ok(())
     }
 
+    /// Sends a "watch" event for a given channel.
     pub async fn send_watch(&self, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
         if let Some(user_id) = &self.user_id {
             send_watch(&self.client, &user_id, &self.client_url, channel_login, broadcast_id, channel_id).await?;
@@ -114,45 +128,62 @@ impl TwitchClient {
     }
 
     //GQL
+
+    /// Retrieves the user's inventory from Twitch.
     pub async fn get_inventory (&self) -> Result<GetInventory, TwitchError> {
         let inv = inventory(&self.client).await?;
         Ok(inv)
     }
+
+    /// Returns current information about Twitch Drops campaigns.
     pub async fn get_campaign (&self) -> Result<Drops, TwitchError> {
         let drops = campaign(&self.client).await?;
         Ok(drops)
     }
+
+    /// Retrieves the slug for a given game name.
     pub async fn get_slug (&self, game_name: &str) -> Result<String, TwitchError> {
         let slug = slug_redirect(&self.client, game_name).await?;
         Ok(slug)
     }
 
+    /// Retrieves the playback access token for a given Twitch channel.
     pub async fn get_playback_access_token (&self, channel_login: &str) -> Result<PlaybackAccessToken, TwitchError> {
         let playback = playback_access_token(&self.client, channel_login).await?;
         Ok(playback)
     }
 
+    /// Retrieves a list of Twitch streams for a specific game, optionally filtering by drops-enabled streams
     pub async fn get_game_directory(&self, game_slug: &str, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
         let streams = game_directory(&self.client, game_slug, drops_enabled).await?;
         Ok(streams)
     }
+
+    /// Returns a list of available Twitch Drops and their progress for a given channel.
     pub async fn get_available_drops_for_channel (&self, channel_id: &str) -> Result<AvailableDrops, TwitchError> {
         let drops = available_drops(&self.client, channel_id).await?;
         Ok(drops)
     }
+
+    /// Retrieves detailed information about a specific Twitch Drops campaign for a user
     pub async fn get_campaign_details (&self, user_login: &str, drop_id: &str) -> Result<CampaignDetails, TwitchError> {
         let details = campaign_details(&self.client, user_login, drop_id).await?;
         Ok(details)
     }
+
+    /// Retrieves the current drop progress for a user on a specific Twitch channel.
     pub async fn get_current_drop_progress_on_channel (&self, channel_login: &str, channel_id: &str) -> Result<CurrentDrop, TwitchError> {
         let current = current_drop(&self.client, channel_login, channel_id).await?;
         Ok(current)
     }
 
+    /// Retrieves the current stream information for a given Twitch channel.
     pub async fn get_stream_info (&self, channel_login: &str) -> Result<StreamInfo, TwitchError> {
         let stream_info = stream_info(&self.client, channel_login).await?;
         Ok(stream_info)
     }
+
+    /// Claims a Twitch drop for the given drop instance ID
     pub async fn claim_drop (&self, drop_instance_id: &str) -> Result<ClaimDrop, TwitchError> {
         let claim = claim_drop(&self.client, drop_instance_id).await?;
         Ok(claim)

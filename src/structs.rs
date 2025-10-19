@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 //game_directory
-
+/// Represents a Twitch stream in the game directory.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -15,6 +15,8 @@ pub struct GameDirectory {
     pub game: Game,
 }
 
+
+/// Information about the broadcaster (channel owner) for a stream
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Broadcaster {
@@ -24,6 +26,7 @@ pub struct Broadcaster {
     pub profileImageURL: String,
 }
 
+/// Basic game metadata shown for a stream in the directory.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Game {
@@ -35,7 +38,7 @@ pub struct Game {
 }
 
 //playback_access_token
-
+/// Represents a playback access token for a Twitch stream.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -45,16 +48,16 @@ pub struct PlaybackAccessToken {
 }
 
 //available_drops
-
+/// Represents the response containing the list of available Drops for a user
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
-
 //main
 pub struct AvailableDrops {
     pub id: String,
     pub viewerDropCampaigns: Vec<ViewerDropCampaigns>
 }
 
+/// A single viewer-facing drop campaign (summary) available to watch/claim.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct ViewerDropCampaigns {
@@ -67,6 +70,7 @@ pub struct ViewerDropCampaigns {
     pub game: GameDrops
 }
 
+/// Minimal game info attached to drops (id + name)
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct GameDrops {
@@ -74,6 +78,7 @@ pub struct GameDrops {
     pub name: String
 }
 
+/// A time-based drop tier inside a campaign, includes required watch time and benefits
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct TimeBasedDrops {
@@ -91,6 +96,8 @@ pub struct BenefitEdge {
     pub benefit: Benefit
 }
 
+
+/// A benefit / reward that a viewer can earn from a drop
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Benefit {
@@ -101,6 +108,7 @@ pub struct Benefit {
 }
 
 //get_campaign
+/// Represents a user's drops overview - campaigns associated with the user.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -111,6 +119,7 @@ pub struct Drops {
     pub dropCampaigns: Vec<DropCampaigns>
 }
 
+/// Summary of a drop campaign
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct DropCampaigns {
@@ -127,6 +136,7 @@ pub struct DropCampaigns {
     pub connecting: CampaignSelf,
 }
 
+/// Owner information for a campaign
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Owner {
@@ -149,7 +159,7 @@ pub struct CampaignSelf {
 }
 
 //get_campaign_details
-
+/// Full details for a specific drop campaign
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -171,6 +181,7 @@ pub struct CampaignDetails {
     pub timeBasedDrops: Vec<TimeBasedDropsCampaignDetails>
 }
 
+/// Flags whether campaign features are allowed/enabled and which channels are permitted.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Allow {
@@ -194,6 +205,7 @@ pub struct CampaignDetailsGame {
     pub displayName: String
 }
 
+/// Time-based drop detail inside the campaign with additional gating like required subs.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct TimeBasedDropsCampaignDetails {
@@ -214,6 +226,7 @@ pub struct CampaignDetailsBenefitsEdges {
     pub benefit: CampaignDetailsBenefits,
 }
 
+/// Detailed information about a specific campaign benefit
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct CampaignDetailsBenefits {
@@ -230,6 +243,7 @@ pub struct CampaignDetailsBenefits {
 
 
 //get_current_drop_progress_on_channel
+/// Shows the current drop progress for the requesting user on a given channel.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct CurrentDrop {
@@ -248,6 +262,7 @@ pub struct CurrentGame {
 }
 
 //get_stream_info
+/// Detailed stream info for a broadcaster - profile, broadcast settings and live stream data.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -261,6 +276,7 @@ pub struct StreamInfo {
     pub stream: Stream
 }
 
+/// Broadcast settings such as title and game selection for the current broadcast.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct BroadcastSettings {
@@ -278,6 +294,7 @@ pub struct StreamGame {
     pub id: String
 }
 
+/// Lightweight live stream data (viewers count, tags, id).
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct Stream {
@@ -287,6 +304,7 @@ pub struct Stream {
 }
 
 //get_inventory
+/// User inventory response - all drops and progress tied to a user account.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -301,6 +319,7 @@ pub struct Inventory {
     pub dropCampaignsInProgress: Vec<DropCampaignsInProgress>
 }
 
+/// A campaign that the user is currently participating in (in-progress info).
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct DropCampaignsInProgress {
@@ -334,6 +353,7 @@ pub struct InventoryGame {
     pub boxArtURL: String,
 }
 
+/// Progress-specific data for a time-based drop inside the user's inventory.
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct InventoryTimeBasedDrops {
@@ -349,6 +369,8 @@ pub struct InventoryTimeBasedDrops {
     pub self_drop: InventorySelf
 }
 
+
+/// Tracks the user's current state for a specific inventory drop (minutes watched, claimed, etc.).
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct InventorySelf {
@@ -365,6 +387,7 @@ pub struct InventoryBenefitEdge {
     pub benefit: InventoryBenefit
 }
 
+/// Benefit metadata inside the inventory
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct InventoryBenefit {
@@ -386,6 +409,7 @@ pub struct InventoryCampaign {
 
 
 //claim_drop
+/// Response returned when attempting to claim a drop
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 //main
@@ -397,7 +421,6 @@ pub struct ClaimDrop {
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
-//main
 pub struct DropType {
     pub campaign: ClaimCampaign,
     pub id: String
@@ -405,7 +428,6 @@ pub struct DropType {
 
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
-//main
 pub struct ClaimCampaign {
     pub detailsURL: String,
     pub id: String
