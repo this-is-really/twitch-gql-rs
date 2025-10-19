@@ -2,7 +2,7 @@
 name = "twitch-gql-rs"
 description = "GraphQL client and types for interacting with Twitch's GraphQL API."
 license = "MIT OR Apache-2.0"
-keywords = ["twitch", "graphql", "gql", "streaming", "api", "rust"]
+keywords = ["twitch", "graphql", "gql", "streaming", "api"]
 homepage = "https://github.com/this-is-really/twitch-gql-rs"
 version = "0.1.0"
 edition = "2024"
