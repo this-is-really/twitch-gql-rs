@@ -10,7 +10,7 @@ mod api;
 use gql::*;
 use api::*;
 
-use crate::structs::{AvailableDrops, CampaignDetails, CurrentDrop, Drops, GameDirectory, PlaybackAccessToken, StreamInfo};
+use crate::structs::{AvailableDrops, CampaignDetails, ClaimDrop, CurrentDrop, Drops, GameDirectory, GetInventory, PlaybackAccessToken, StreamInfo};
 pub mod structs;
 
 #[derive(Deserialize, Serialize)]
@@ -113,9 +113,10 @@ impl TwitchClient {
         Ok(())
     }
 
-    //gql
-    pub async fn get_inventory (&self) {
-        inventory(&self.client).await.unwrap();
+    //GQL
+    pub async fn get_inventory (&self) -> Result<GetInventory, TwitchError> {
+        let inv = inventory(&self.client).await?;
+        Ok(inv)
     }
     pub async fn get_campaign (&self) -> Result<Drops, TwitchError> {
         let drops = campaign(&self.client).await?;
@@ -151,6 +152,10 @@ impl TwitchClient {
     pub async fn get_stream_info (&self, channel_login: &str) -> Result<StreamInfo, TwitchError> {
         let stream_info = stream_info(&self.client, channel_login).await?;
         Ok(stream_info)
+    }
+    pub async fn claim_drop (&self, drop_instance_id: &str) -> Result<ClaimDrop, TwitchError> {
+        let claim = claim_drop(&self.client, drop_instance_id).await?;
+        Ok(claim)
     }
 }
 

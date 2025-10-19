@@ -29,7 +29,7 @@ pub struct Broadcaster {
 pub struct Game {
     pub id: String,
     pub name: String,
-    pub displayName: String,
+    pub displayName: Option<String>,
     pub slug: String,
     pub boxArtURL: String
 }
@@ -183,7 +183,7 @@ pub struct Allow {
 pub struct Channels {
     pub id: String,
     pub name: String,
-    pub displayName: String
+    pub displayName: Option<String>,
 }
 
 #[allow(non_snake_case)]
@@ -233,11 +233,18 @@ pub struct CampaignDetailsBenefits {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default)]
 pub struct CurrentDrop {
-    pub channel: Option<String>,
+    pub channel: Option<Channels>,
     pub currentMinutesWatched: u64,
     pub dropID: String,
-    pub game: Option<String>,
+    pub game: Option<CurrentGame>,
     pub requiredMinutesWatched: u64,
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct CurrentGame {
+    displayName: String,
+    id: String
 }
 
 //get_stream_info
@@ -277,4 +284,129 @@ pub struct Stream {
     pub id: String,
     pub viewersCount: u64,
     pub tags: Vec<String>
+}
+
+//get_inventory
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+//main
+pub struct GetInventory {
+    pub id: String,
+    pub inventory: Inventory
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct Inventory {
+    pub dropCampaignsInProgress: Vec<DropCampaignsInProgress>
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct DropCampaignsInProgress {
+    pub id: String,
+    pub detailsURL: String,
+    pub accountLinkURL: String,
+    pub startAt: String,
+    pub endAt: String,
+    pub imageURL: String,
+    pub name: String,
+    pub status: String,
+    #[serde(rename = "self")]
+    pub drop_self: CampaignSelf,
+    pub game: InventoryGame,
+    pub allow: InventoryAllow,
+    pub timeBasedDrops: Vec<InventoryTimeBasedDrops>,
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventoryAllow {
+    pub channels: Option<Vec<Channels>>
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventoryGame {
+    pub id: String,
+    pub slug: String,
+    pub name: String,
+    pub boxArtURL: String,
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventoryTimeBasedDrops {
+    pub id: String,
+    pub name: String,
+    pub startAt: String,
+    pub endAt: String,
+    pub requiredMinutesWatched: u64,
+    pub benefitEdges: Vec<InventoryBenefitEdge>,
+    pub requiredSubs: u64,
+    pub campaign: InventoryCampaign,
+    #[serde(rename = "self")]
+    pub self_drop: InventorySelf
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventorySelf {
+    pub hasPreconditionsMet: bool,
+    pub currentMinutesWatched: u64,
+    pub currentSubs: u64,
+    pub isClaimed: bool,
+    pub dropInstanceID: Option<String>
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventoryBenefitEdge {
+    pub benefit: InventoryBenefit
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventoryBenefit {
+    pub id: String,
+    pub name: String,
+    pub imageAssetURL: String,
+    pub distributionType: String
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+pub struct InventoryCampaign {
+    pub id: String,
+    pub detailsURL: String,
+    pub accountLinkURL: String,
+    #[serde(rename = "self")]
+    pub campaign_self: CampaignSelf
+}
+
+
+//claim_drop
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+//main
+pub struct ClaimDrop {
+    pub isUserAccountConnected: bool,
+    pub status: String,
+    pub dropType: DropType
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+//main
+pub struct DropType {
+    pub campaign: ClaimCampaign,
+    pub id: String
+}
+
+#[allow(non_snake_case)]
+#[derive(Deserialize, Serialize, Debug, Default)]
+//main
+pub struct ClaimCampaign {
+    pub detailsURL: String,
+    pub id: String
 }

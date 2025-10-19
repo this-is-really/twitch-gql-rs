@@ -3,7 +3,7 @@ use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::{error::TwitchError, structs::{AvailableDrops, CampaignDetails, CurrentDrop, Drops, GameDirectory, PlaybackAccessToken, StreamInfo}};
+use crate::{error::TwitchError, structs::{AvailableDrops, CampaignDetails, ClaimDrop, CurrentDrop, Drops, GameDirectory, GetInventory, PlaybackAccessToken, StreamInfo}};
 
 pub const GQL_URL: &'static str = "https://gql.twitch.tv/gql";
 
@@ -73,27 +73,30 @@ pub async fn stream_info (client: &Client, channel_login: &str) -> Result<Stream
     let stream_info: StreamInfo = serde_json::from_value(gql)?;
     Ok(stream_info)
 }
-pub async fn claim_drop (client: &Client, drop_id: &str) -> Result<(), TwitchError> {
+pub async fn claim_drop (client: &Client, drop_instance_id: &str) -> Result<ClaimDrop, TwitchError> {
     let gql = GQLOperation::new("DropsPage_ClaimDropRewards", "a455deea71bdc9015b78eb49f4acfbce8baa7ccbedd28e549bb025bd0f751930").with_variables(json!({
         "input": {
-            "dropInstanceID": drop_id
+            "dropInstanceID": drop_instance_id
         }
     }));
     let gql = client.post(GQL_URL).json(&gql).send().await?;
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
-    println!("{:#?}", gql);
-    Ok(())
+    let gql = get_value_from_vec(gql, &["data", "claimDropRewards"])?;
+    let claim_drop: ClaimDrop = serde_json::from_value(gql)?;
+    Ok(claim_drop)
 }
 
-pub async fn inventory (client: &Client) -> Result<(), TwitchError> {
+pub async fn inventory (client: &Client) -> Result<GetInventory, TwitchError> {
     let gql = GQLOperation::new("Inventory", "d86775d0ef16a63a33ad52e80eaff963b2d5b72fada7c991504a57496e1d8e4b").with_variables(json!({
         "fetchRewardCampaigns": false
     }));
     let gql = client.post(GQL_URL).json(&gql).send().await?;
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
-    Ok(())
+    let gql = get_value_from_vec(gql, &["data", "currentUser"])?;
+    let inventory: GetInventory = serde_json::from_value(gql)?;
+    Ok(inventory)
 }
 
 pub async fn current_drop (client: &Client, channel_login: &str, channel_id: &str) -> Result<CurrentDrop, TwitchError> {
