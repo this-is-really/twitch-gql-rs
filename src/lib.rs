@@ -6,30 +6,25 @@
 //! ## Example
 //!
 //! ```rust
-//! use std::path::Path;
-//! use twitch_gql_rs::TwitchClient;
+//! use std::{error::Error, path::Path};
+//! use twitch_gql_rs::{client_type::ClientType, TwitchClient};
 //! 
 //! async fn example() -> Result<(), Box<dyn std::error::Error>> {
 //!     let path = Path::new("save.json");
-//!     let user_agent = "Dalvik/2.1.0 (Linux; U; Android 16; SM-S911B Build/TP1A.220624.014) tv.twitch.android.app/25.3.0/2503006";
 //!
 //!     if !path.exists() {
-//!         let mut client = TwitchClient::new(
-//!             "kd1unb4b3q4t58fwlpcbzcbnm76a8fp",
-//!             user_agent,
-//!             "https://www.twitch.tv",
-//!         ).await?;
-//!         client.auth().await?;
-//!         client.save_file(&path).await?;
+//!         let client_type = ClientType::android_app();
+//!        let mut client = TwitchClient::new(&client_type).await?;
+//!        client.auth().await?;
+//!        client.save_file(&path).await?;
 //!     }
 //!
 //!     let client = TwitchClient::load_from_file(&path).await?;
-//!     let inv = client.get_inventory().await?;
-//!
-//!     for in_progress in inv.inventory.dropCampaignsInProgress {
+//!     let inventory = client.get_inventory().await?;
+//!     for in_progress in inventory.inventory.dropCampaignsInProgress {
 //!         for time_based in in_progress.timeBasedDrops {
 //!             if let Some(id) = time_based.self_drop.dropInstanceID {
-//!                 println!("{id}");
+//!                 println!("{id}")
 //!             }
 //!         }
 //!     }
@@ -49,9 +44,11 @@ mod api;
 use gql::*;
 use api::*;
 
-use crate::structs::{AvailableDrops, CampaignDetails, ClaimDrop, CurrentDrop, Drops, GameDirectory, GetInventory, PlaybackAccessToken, StreamInfo};
+use crate::{client_type::ClientType, structs::{AvailableDrops, CampaignDetails, ClaimDrop, CurrentDrop, Drops, GameDirectory, GetInventory, PlaybackAccessToken, StreamInfo}};
 pub mod structs;
+pub mod client_type;
 
+/// Represents a Twitch GraphQL client used to interact with Twitch's API.
 #[derive(Deserialize, Serialize)]
 pub struct TwitchClient {
     #[serde(skip)]
@@ -125,15 +122,15 @@ impl TwitchClient {
     }
 
     /// Creates a new `TwitchClient` instance without an access token.
-    pub async fn new(client_id: &str, user_agent: &str, client_url: &str) -> Result<Self, SystemError> {
-        let headers = get_headers(client_id, user_agent, None).await?;
+    pub async fn new(client_type: &ClientType) -> Result<Self, SystemError> {
+        let headers = get_headers(&client_type.client_id, &client_type.user_agent, None).await?;
         let client = ClientBuilder::new().default_headers(headers).build()?;
 
         Ok(TwitchClient {
             client,
-            client_id: client_id.to_string(),
-            user_agent: user_agent.to_string(),
-            client_url: client_url.to_string(),
+            client_id: client_type.client_id.to_string(),
+            user_agent: client_type.user_agent.to_string(),
+            client_url: client_type.client_url.to_string(),
             user_id: None,
             access_token: None,
         })
