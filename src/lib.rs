@@ -8,15 +8,16 @@
 //! ```rust
 //! use std::{error::Error, path::Path};
 //! use twitch_gql_rs::{client_type::ClientType, TwitchClient};
-//! 
-//! async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//!
+//! #[tokio::main]
+//! async fn main() -> Result<(), Box<dyn Error>> {
 //!     let path = Path::new("save.json");
 //!
 //!     if !path.exists() {
 //!         let client_type = ClientType::android_app();
-//!        let mut client = TwitchClient::new(&client_type).await?;
-//!        client.auth().await?;
-//!        client.save_file(&path).await?;
+//!         let mut client = TwitchClient::new(&client_type).await?;
+//!         client.auth().await?;
+//!         client.save_file(&path).await?;
 //!     }
 //!
 //!     let client = TwitchClient::load_from_file(&path).await?;
@@ -24,13 +25,15 @@
 //!     for in_progress in inventory.inventory.dropCampaignsInProgress {
 //!         for time_based in in_progress.timeBasedDrops {
 //!             if let Some(id) = time_based.self_drop.dropInstanceID {
-//!                 println!("{id}")
+//!                 println!("{id}");
 //!             }
 //!         }
 //!     }
-//! Ok(())
+//!
+//!     Ok(())
 //! }
 //! ```
+
 
 use std::{error::Error, path::Path};
 
