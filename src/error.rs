@@ -26,5 +26,9 @@ pub enum TwitchError {
     #[error("Failed reqwest Twitch response: {0}")]
     ReqwestProblem(#[from] reqwest::Error),
     #[error("Twitch error: {0}")]
-    TwitchError(String)
+    TwitchError(String),
+    #[error("The specified channel does not exist or another error occurred.")]
+    ChannelNotFound,
+    #[error("The specified campaign does not exist or another error occurred.")]
+    CampaignNotFound,
 }

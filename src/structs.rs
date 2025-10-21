@@ -273,7 +273,7 @@ pub struct StreamInfo {
     pub login: String,
     pub profileImageURL: String,
     pub profileURL: String,
-    pub stream: Stream
+    pub stream: Option<Stream>
 }
 
 /// Broadcast settings such as title and game selection for the current broadcast.

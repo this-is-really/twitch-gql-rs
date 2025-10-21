@@ -70,7 +70,10 @@ pub async fn stream_info (client: &Client, channel_login: &str) -> Result<Stream
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
     let gql = get_value_from_vec(gql, &["data", "user"])?;
-    let stream_info: StreamInfo = serde_json::from_value(gql)?;
+    let stream_info: StreamInfo = match serde_json::from_value(gql) {
+        Ok(v) => v,
+        Err(_) => return Err(TwitchError::ChannelNotFound)
+    };
     Ok(stream_info)
 }
 pub async fn claim_drop (client: &Client, drop_instance_id: &str) -> Result<ClaimDrop, TwitchError> {
@@ -133,7 +136,10 @@ pub async fn campaign_details (client: &Client, user_login: &str, drop_id: &str)
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
     let details = get_value_from_vec(gql, &["data", "user", "dropCampaign"])?;
-    let details: CampaignDetails = serde_json::from_value(details)?;
+    let details: CampaignDetails = match serde_json::from_value(details) {
+        Ok(v) => v,
+        Err(_) => return Err(TwitchError::CampaignNotFound)
+    };
     Ok(details)
 }
 

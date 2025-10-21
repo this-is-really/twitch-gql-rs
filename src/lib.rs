@@ -48,7 +48,9 @@ use gql::*;
 use api::*;
 
 use crate::{client_type::ClientType, structs::{AvailableDrops, CampaignDetails, ClaimDrop, CurrentDrop, Drops, GameDirectory, GetInventory, PlaybackAccessToken, StreamInfo}};
+/// All data structures used in the project
 pub mod structs;
+/// Client types
 pub mod client_type;
 
 /// Represents a Twitch GraphQL client used to interact with Twitch's API.
