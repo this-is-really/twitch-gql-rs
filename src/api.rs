@@ -12,18 +12,22 @@ use crate::{error::TwitchError, gql::{playback_access_token}};
 const DEVICE_URL: &'static str = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL: &'static str = "https://id.twitch.tv/oauth2/token";
 
-async fn validate (client: &Client, oauth: &str) -> Result<String, TwitchError> {
+async fn validate (client: &Client, oauth: &str) -> Result<(String, String), TwitchError> {
     let url = "https://id.twitch.tv/oauth2/validate";
-    let get_user_id = client.get(url).header("Authorization", format!("OAuth {}", oauth)).send().await?;
-    let get_user_id: Value = get_user_id.json().await?;
-    if let Some(user_id) = get_user_id.get("user_id").and_then(|s| s.as_str()) {
-        return Ok(user_id.to_string());
+    let get_validate = client.get(url).header("Authorization", format!("OAuth {}", oauth)).send().await?;
+    let get_validate: Value = get_validate.json().await?;
+    if let Some(user_id) = get_validate.get("user_id").and_then(|s| s.as_str()) {
+        if let Some(login) = get_validate.get("login").and_then(|s| s.as_str()) {
+            return Ok((user_id.to_string(), login.to_string()));
+        } else {
+            return Err(TwitchError::TwitchError("Not found login".into()));
+        }
     } else {
         return Err(TwitchError::TwitchError("Not found user_id".into()));
     }
 }
 
-pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String), TwitchError> {
+pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String, String), TwitchError> {
     let payload = [
         ("client_id", client_id),
         ("scopes", "")
@@ -50,8 +54,8 @@ pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String),
         }
         let status: Value = status.json().await?;
         if let Some(access_token) = status.get("access_token").and_then(|s| s.as_str()) {
-            let user_id = validate(&client, &access_token).await?;
-            return Ok((access_token.to_string(), user_id));
+            let user = validate(&client, &access_token).await?;
+            return Ok((access_token.to_string(), user.0, user.1));
         } else {
             sleep(Duration::from_secs(interval.as_u64().unwrap())).await;
         }

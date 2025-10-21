@@ -60,6 +60,7 @@ pub struct TwitchClient {
     user_agent: String,
     client_url: String,
     user_id: Option<String>,
+    login: Option<String>,
     access_token: Option<String>,
 }
 
@@ -135,6 +136,7 @@ impl TwitchClient {
             user_agent: client_type.user_agent.to_string(),
             client_url: client_type.client_url.to_string(),
             user_id: None,
+            login: None,
             access_token: None,
         })
     }
@@ -146,6 +148,7 @@ impl TwitchClient {
         let auth = auth(&self.client, &self.client_id).await?;
         self.access_token = Some(auth.0);
         self.user_id = Some(auth.1);
+        self.login = Some(auth.2);
         Ok(())
     }
 
@@ -199,9 +202,13 @@ impl TwitchClient {
     }
 
     /// Retrieves detailed information about a specific Twitch Drops campaign for a user
-    pub async fn get_campaign_details (&self, user_login: &str, drop_id: &str) -> Result<CampaignDetails, TwitchError> {
-        let details = campaign_details(&self.client, user_login, drop_id).await?;
-        Ok(details)
+    pub async fn get_campaign_details (&self, drop_id: &str) -> Result<CampaignDetails, TwitchError> {
+        if let Some(login) = &self.login {
+            let details = campaign_details(&self.client, &login, drop_id).await?;
+            return Ok(details)
+        } else {
+            return Err(TwitchError::TwitchError("Not found login".into()));
+        }
     }
 
     /// Retrieves the current drop progress for a user on a specific Twitch channel.
