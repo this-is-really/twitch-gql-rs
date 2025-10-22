@@ -14,9 +14,11 @@ async fn example() -> Result<(), Box<dyn std::error::Error>> {
 
     if !path.exists() {
         let client_type = ClientType::android_app();
-       let mut client = TwitchClient::new(&client_type).await?;
-       client.auth().await?;
-       client.save_file(&path).await?;
+        let mut client = TwitchClient::new(&client_type).await?;
+        let get_auth = client.request_device_auth().await?;
+        println!("Please open the following link in your browser:\n{}\nThen enter this code: {}", get_auth.verification_uri, get_auth.user_code);
+        client.auth(get_auth).await?;
+        client.save_file(&path).await?;
     }
 
     let client = TwitchClient::load_from_file(&path).await?;
