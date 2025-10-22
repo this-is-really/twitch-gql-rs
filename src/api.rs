@@ -12,6 +12,14 @@ use crate::{error::TwitchError, gql::{playback_access_token}};
 const DEVICE_URL: &'static str = "https://id.twitch.tv/oauth2/device";
 const TOKEN_URL: &'static str = "https://id.twitch.tv/oauth2/token";
 
+#[derive(Debug, Clone)]
+pub struct DeviceAuth {
+    device_code: String,
+    pub user_code: String,
+    interval: u64,
+    pub verification_uri: String
+}
+
 async fn validate (client: &Client, oauth: &str) -> Result<(String, String), TwitchError> {
     let url = "https://id.twitch.tv/oauth2/validate";
     let get_validate = client.get(url).header("Authorization", format!("OAuth {}", oauth)).send().await?;
@@ -27,7 +35,7 @@ async fn validate (client: &Client, oauth: &str) -> Result<(String, String), Twi
     }
 }
 
-pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String, String), TwitchError> {
+pub async fn request_device_auth (client: &Client, client_id: &str) -> Result<DeviceAuth, TwitchError> {
     let payload = [
         ("client_id", client_id),
         ("scopes", "")
@@ -37,19 +45,22 @@ pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String, 
         return Err(TwitchError::HttpError(response.status().as_u16()));
     }
     let response: Value = response.json().await?;
-    let device_code = response.get("device_code").ok_or_else(|| TwitchError::MissingField("device_code".into()))?;
-    let user_code = response.get("user_code").ok_or_else(|| TwitchError::MissingField("user_code".into()))?;
-    let interval = response.get("interval").ok_or_else(|| TwitchError::MissingField("interval".into()))?;
-    let verification_uri = response.get("verification_uri").ok_or_else(|| TwitchError::MissingField("verification_uri".into()))?;
+    let device_code = response.get("device_code").and_then(|s| s.as_str()).ok_or_else(|| TwitchError::MissingField("device_code".into()))?;
+    let user_code = response.get("user_code").and_then(|s| s.as_str()).ok_or_else(|| TwitchError::MissingField("user_code".into()))?;
+    let interval = response.get("interval").and_then(|s| s.as_u64()).ok_or_else(|| TwitchError::MissingField("interval".into()))?;
+    let verification_uri = response.get("verification_uri").and_then(|s| s.as_str()).ok_or_else(|| TwitchError::MissingField("verification_uri".into()))?;
+    Ok(DeviceAuth { device_code: device_code.to_string(), user_code: user_code.to_string(), interval: interval, verification_uri: verification_uri.to_string() })
+}
+
+pub async fn poll_device_auth (client: &Client, client_id: &str, device_auth: DeviceAuth) -> Result<(String, String, String), TwitchError> {
     let payload = [
         ("client_id", client_id),
-        ("device_code", device_code.as_str().unwrap()),
+        ("device_code", &device_auth.device_code),
         ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
     ];
-    println!("Please open the following link in your browser:\n{}\nThen enter this code: {}", verification_uri, user_code);
     loop {
         let status = client.post(TOKEN_URL).form(&payload).send().await?;
-        if !status.status().is_success() && !status.status().as_u16() == 400 {
+        if status.status().is_success() && !status.status().as_u16() == 400 {
             return Err(TwitchError::HttpError(status.status().as_u16()));
         }
         let status: Value = status.json().await?;
@@ -57,7 +68,7 @@ pub async fn auth (client: &Client, client_id: &str) -> Result<(String, String, 
             let user = validate(&client, &access_token).await?;
             return Ok((access_token.to_string(), user.0, user.1));
         } else {
-            sleep(Duration::from_secs(interval.as_u64().unwrap())).await;
+            sleep(Duration::from_secs(device_auth.interval)).await;
         }
     }
 }

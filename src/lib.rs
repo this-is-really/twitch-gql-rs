@@ -16,7 +16,9 @@
 //!     if !path.exists() {
 //!         let client_type = ClientType::android_app();
 //!         let mut client = TwitchClient::new(&client_type).await?;
-//!         client.auth().await?;
+//!         let get_auth = client.request_device_auth().await?;
+//!         println!("Please open the following link in your browser:\n{}\nThen enter this code: {}", get_auth.verification_uri, get_auth.user_code);
+//!         client.auth(get_auth).await?;
 //!         client.save_file(&path).await?;
 //!     }
 //!
@@ -54,7 +56,7 @@ pub mod structs;
 pub mod client_type;
 
 /// Represents a Twitch GraphQL client used to interact with Twitch's API.
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct TwitchClient {
     #[serde(skip)]
     client: Client,
@@ -144,15 +146,21 @@ impl TwitchClient {
     }
 
     // API
+    /// Requests Device Flow from Twitch and returns a `DeviceAuth` structure.
+    pub async fn request_device_auth(&self) -> Result<DeviceAuth, TwitchError> {
+        let auth = request_device_auth(&self.client, &self.client_id).await?;
+        Ok(auth)
+    }
+
     /// Authenticates the `TwitchClient`.
-    /// On success, stores the access token and user ID in the client.
-    pub async fn auth(&mut self) -> Result<(), TwitchError> {
-        let auth = auth(&self.client, &self.client_id).await?;
+    /// Starts a token polling cycle via Device Flow using the passed `DeviceAuth`.
+    pub async fn auth (&mut self, device_auth: DeviceAuth) -> Result<(), TwitchError> {
+        let auth = poll_device_auth(&self.client, &self.client_id, device_auth).await?;
         self.access_token = Some(auth.0);
         self.user_id = Some(auth.1);
         self.login = Some(auth.2);
         Ok(())
-    }
+    } 
 
     /// Sends a "watch" event for a given channel.
     pub async fn send_watch(&self, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
