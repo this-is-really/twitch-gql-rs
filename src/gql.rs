@@ -217,6 +217,9 @@ pub async fn slug_redirect (client: &Client, game_name: &str) -> Result<String, 
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
     let slug = get_value_from_vec(gql, &["data", "game", "slug"])?;
-    let slug = slug.as_str().unwrap_or_else(|| "Invalid parsing");
+    let slug = match slug.as_str() {
+        Some(s) => s,
+        None => return Err(TwitchError::GameSlugParsingFailed)
+    };
     Ok(slug.to_string())
 }

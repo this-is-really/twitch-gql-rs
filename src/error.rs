@@ -31,4 +31,6 @@ pub enum TwitchError {
     ChannelNotFound,
     #[error("The specified campaign does not exist or another error occurred.")]
     CampaignNotFound,
+    #[error("Failed to parse game slug from GraphQL response.")]
+    GameSlugParsingFailed,
 }
