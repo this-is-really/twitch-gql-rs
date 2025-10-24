@@ -1,5 +1,9 @@
 # TWITCH-GQL-RS
 
+[![crates.io](https://img.shields.io/crates/v/twitch-gql-rs.svg)](https://crates.io/crates/twitch-gql-rs)
+[![Documentation](https://docs.rs/twitch-gql-rs/badge.svg)](https://docs.rs/twitch-gql-rs/0.1.6/twitch_gql_rs)
+[![github.com](https://img.shields.io/github/stars/this-is-really/twitch-gql-rs.svg?style=social&label=Star)](https://github.com/this-is-really/twitch-gql-rs)
+
 A small, lightweight implementation of a *GraphQL* client for interacting with **Twitch's GraphQL API**.
 Designed for simple queries, typed responses, and easy integration into async Rust applications.
 
