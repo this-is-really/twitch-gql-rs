@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 //game_directory
 /// Represents a Twitch stream in the game directory.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct GameDirectory {
     pub id: String,
@@ -18,7 +18,7 @@ pub struct GameDirectory {
 
 /// Information about the broadcaster (channel owner) for a stream
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Broadcaster {
     pub id: String,
     pub login: String,
@@ -28,7 +28,7 @@ pub struct Broadcaster {
 
 /// Basic game metadata shown for a stream in the directory.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Game {
     pub id: String,
     pub name: String,
@@ -40,7 +40,7 @@ pub struct Game {
 //playback_access_token
 /// Represents a playback access token for a Twitch stream.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct PlaybackAccessToken {
     pub signature: String,
@@ -50,7 +50,7 @@ pub struct PlaybackAccessToken {
 //available_drops
 /// Represents the response containing the list of available Drops for a user
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct AvailableDrops {
     pub id: String,
@@ -59,7 +59,7 @@ pub struct AvailableDrops {
 
 /// A single viewer-facing drop campaign (summary) available to watch/claim.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct ViewerDropCampaigns {
     pub id: String,
     pub name: String,
@@ -72,7 +72,7 @@ pub struct ViewerDropCampaigns {
 
 /// Minimal game info attached to drops (id + name)
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct GameDrops {
     pub id: String,
     pub name: String
@@ -80,7 +80,7 @@ pub struct GameDrops {
 
 /// A time-based drop tier inside a campaign, includes required watch time and benefits
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct TimeBasedDrops {
     pub id: String,
     pub name: String,
@@ -91,7 +91,7 @@ pub struct TimeBasedDrops {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct BenefitEdge {
     pub benefit: Benefit
 }
@@ -99,7 +99,7 @@ pub struct BenefitEdge {
 
 /// A benefit / reward that a viewer can earn from a drop
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Benefit {
     pub id: String,
     pub name: String,
@@ -110,7 +110,7 @@ pub struct Benefit {
 //get_campaign
 /// Represents a user's drops overview - campaigns associated with the user.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct Drops {
     #[serde(rename = "id")]
@@ -121,7 +121,7 @@ pub struct Drops {
 
 /// Summary of a drop campaign
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct DropCampaigns {
     pub id: String,
     pub name: String,
@@ -138,14 +138,14 @@ pub struct DropCampaigns {
 
 /// Owner information for a campaign
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Owner {
     pub id: String,
     pub name: String,
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CampaignGame {
     pub id: String,
     pub displayName: String,
@@ -153,7 +153,7 @@ pub struct CampaignGame {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CampaignSelf {
     pub isAccountConnected: bool
 }
@@ -161,7 +161,7 @@ pub struct CampaignSelf {
 //get_campaign_details
 /// Full details for a specific drop campaign
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct CampaignDetails {
     pub id: String,
@@ -183,14 +183,14 @@ pub struct CampaignDetails {
 
 /// Flags whether campaign features are allowed/enabled and which channels are permitted.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Allow {
     pub isEnabled: bool,
     pub channels: Option<Vec<Channels>>
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Channels {
     pub id: String,
     pub name: String,
@@ -198,7 +198,7 @@ pub struct Channels {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CampaignDetailsGame {
     pub id: String,
     pub slug: String,
@@ -207,7 +207,7 @@ pub struct CampaignDetailsGame {
 
 /// Time-based drop detail inside the campaign with additional gating like required subs.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct TimeBasedDropsCampaignDetails {
     pub id: String,
     pub name: String,
@@ -220,7 +220,7 @@ pub struct TimeBasedDropsCampaignDetails {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CampaignDetailsBenefitsEdges {
     pub entitlementLimit: u64,
     pub benefit: CampaignDetailsBenefits,
@@ -228,7 +228,7 @@ pub struct CampaignDetailsBenefitsEdges {
 
 /// Detailed information about a specific campaign benefit
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CampaignDetailsBenefits {
     pub id: String,
     pub name: String,
@@ -245,7 +245,7 @@ pub struct CampaignDetailsBenefits {
 //get_current_drop_progress_on_channel
 /// Shows the current drop progress for the requesting user on a given channel.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CurrentDrop {
     pub channel: Option<Channels>,
     pub currentMinutesWatched: u64,
@@ -255,7 +255,7 @@ pub struct CurrentDrop {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CurrentGame {
     displayName: String,
     id: String
@@ -264,7 +264,7 @@ pub struct CurrentGame {
 //get_stream_info
 /// Detailed stream info for a broadcaster - profile, broadcast settings and live stream data.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct StreamInfo {
     pub broadcastSettings: BroadcastSettings,
@@ -278,7 +278,7 @@ pub struct StreamInfo {
 
 /// Broadcast settings such as title and game selection for the current broadcast.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct BroadcastSettings {
     pub id: String,
     pub title: String,
@@ -286,7 +286,7 @@ pub struct BroadcastSettings {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct StreamGame {
     pub displayName: String,
     pub slug: String,
@@ -296,7 +296,7 @@ pub struct StreamGame {
 
 /// Lightweight live stream data (viewers count, tags, id).
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Stream {
     pub id: String,
     pub viewersCount: u64,
@@ -306,7 +306,7 @@ pub struct Stream {
 //get_inventory
 /// User inventory response - all drops and progress tied to a user account.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct GetInventory {
     pub id: String,
@@ -314,14 +314,14 @@ pub struct GetInventory {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Inventory {
     pub dropCampaignsInProgress: Vec<DropCampaignsInProgress>
 }
 
 /// A campaign that the user is currently participating in (in-progress info).
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct DropCampaignsInProgress {
     pub id: String,
     pub detailsURL: String,
@@ -339,13 +339,13 @@ pub struct DropCampaignsInProgress {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryAllow {
     pub channels: Option<Vec<Channels>>
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryGame {
     pub id: String,
     pub slug: String,
@@ -355,7 +355,7 @@ pub struct InventoryGame {
 
 /// Progress-specific data for a time-based drop inside the user's inventory.
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryTimeBasedDrops {
     pub id: String,
     pub name: String,
@@ -372,7 +372,7 @@ pub struct InventoryTimeBasedDrops {
 
 /// Tracks the user's current state for a specific inventory drop (minutes watched, claimed, etc.).
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventorySelf {
     pub hasPreconditionsMet: bool,
     pub currentMinutesWatched: u64,
@@ -382,14 +382,14 @@ pub struct InventorySelf {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryBenefitEdge {
     pub benefit: InventoryBenefit
 }
 
 /// Benefit metadata inside the inventory
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryBenefit {
     pub id: String,
     pub name: String,
@@ -398,7 +398,7 @@ pub struct InventoryBenefit {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct InventoryCampaign {
     pub id: String,
     pub detailsURL: String,
@@ -411,7 +411,7 @@ pub struct InventoryCampaign {
 //claim_drop
 /// Response returned when attempting to claim a drop
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 //main
 pub struct ClaimDrop {
     pub isUserAccountConnected: bool,
@@ -420,14 +420,14 @@ pub struct ClaimDrop {
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct DropType {
     pub campaign: ClaimCampaign,
     pub id: String
 }
 
 #[allow(non_snake_case)]
-#[derive(Deserialize, Serialize, Debug, Default, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct ClaimCampaign {
     pub detailsURL: String,
     pub id: String
