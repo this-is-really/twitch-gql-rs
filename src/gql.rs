@@ -85,9 +85,23 @@ pub async fn claim_drop (client: &Client, drop_instance_id: &str) -> Result<Clai
     let gql = client.post(GQL_URL).json(&gql).send().await?;
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
-    let gql = get_value_from_vec(gql, &["data", "claimDropRewards"])?;
-    let claim_drop: ClaimDrop = serde_json::from_value(gql)?;
-    Ok(claim_drop)
+    if let Ok(claim_drop) = get_value_from_vec(gql.clone(), &["data", "claimDropRewards"]) {
+        let claim_drop: ClaimDrop = serde_json::from_value(claim_drop)?;
+        if claim_drop.status == "ELIGIBLE_FOR_ALL" {
+            return Ok(claim_drop)
+        } else if claim_drop.status == "DROP_INSTANCE_ALREADY_CLAIMED" {
+            return Err(TwitchError::DropAlreadyClaimed);
+        } else {
+            if let Ok(error) = get_value_from_vec(gql, &["data", "error"]) {
+                return Err(TwitchError::FailedClaimDrops(error.to_string()));
+            } else {
+                return Err(TwitchError::FailedClaimDrops("Missing error field".into()));
+            }
+        }
+    } else {
+        return Err(TwitchError::FailedClaimDrops("Missing claimDropRewards field".into()));
+    }
+    
 }
 
 pub async fn inventory (client: &Client) -> Result<GetInventory, TwitchError> {

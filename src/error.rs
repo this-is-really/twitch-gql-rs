@@ -33,4 +33,8 @@ pub enum TwitchError {
     CampaignNotFound,
     #[error("Failed to parse game slug from GraphQL response.")]
     GameSlugParsingFailed,
+    #[error("Failed to claim drop: {0}")]
+    FailedClaimDrops(String),
+    #[error("Drop already claimed")]
+    DropAlreadyClaimed,
 }

@@ -4,7 +4,7 @@ description = "GraphQL client and types for interacting with Twitch's GraphQL AP
 license = "MIT OR Apache-2.0"
 keywords = ["twitch", "graphql", "gql", "streaming", "api"]
 homepage = "https://github.com/this-is-really/twitch-gql-rs"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2024"
 
 [dependencies]

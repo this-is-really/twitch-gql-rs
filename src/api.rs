@@ -1,11 +1,10 @@
 use std::time::Duration;
 
 use base64::Engine;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use reqwest::Client;
 use serde_json::{json, Value};
-use tokio::{sync::Mutex, time::sleep};
+use tokio::{sync::{watch::{self, Sender}}, time::sleep};
 
 use crate::{error::TwitchError, gql::{playback_access_token}};
 
@@ -87,34 +86,27 @@ async fn _watch_stream (client: &Client, channel_login: &str) -> Result<(), Twit
     Ok(())
 }
 
-static SPADE_URL: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new(String::new()));
-
-async fn get_spade_url (spade: &str, client: &Client) -> Result<(), TwitchError> {
+async fn get_spade_url (spade: &str, client: &Client, tx: Sender<String>) -> Result<(), TwitchError> {
     let settings_pattern = Regex::new(r#"src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)""#).unwrap();
     let spade_pattern = Regex::new(r#""spade_?url": ?"(https://video-edge-[.\w\-/]+\.ts(?:\?allow_stream=true)?)""#).unwrap();
     
-    let mut lock = SPADE_URL.lock().await;
-    if lock.is_empty() {
-        if let Some(caps) = spade_pattern.captures(&spade) {
-            let spade_url = caps.get(1).unwrap().as_str();
-            *lock = spade_url.to_string();
+    if let Some(caps) = spade_pattern.captures(&spade) {
+        let spade_url = caps.get(1).unwrap().as_str();
+        tx.send(spade_url.to_string()).unwrap();
+        return Ok(());
+    }
+    if let Some(caps) = settings_pattern.captures(&spade) {
+        let settings_url = caps.get(1).unwrap().as_str();
+        let settings_js = client.get(settings_url).send().await?.text().await?;
+        if let Some(caps2) = spade_pattern.captures(&settings_js) {
+            let spade_url = caps2.get(1).unwrap().as_str();
+            tx.send(spade_url.to_string()).unwrap();
             return Ok(());
-        }
-        if let Some(caps) = settings_pattern.captures(&spade) {
-            let settings_url = caps.get(1).unwrap().as_str();
-            let settings_js = client.get(settings_url).send().await?.text().await?;
-            if let Some(caps2) = spade_pattern.captures(&settings_js) {
-                let spade_url = caps2.get(1).unwrap().as_str();
-                *lock = spade_url.to_string();
-                return Ok(());
-            } else {
-                return Err(TwitchError::TwitchError("Error while spade_url extraction: step #2".into()));
-            }
         } else {
-            return Err(TwitchError::TwitchError("Error while spade_url extraction: step #1".into()));
+            return Err(TwitchError::TwitchError("Error while spade_url extraction: step #2".into()));
         }
     } else {
-        return Ok(());
+        return Err(TwitchError::TwitchError("Error while spade_url extraction: step #1".into()));
     }
 }
 
@@ -122,8 +114,10 @@ pub async fn send_watch (client: &Client, user_id: &str, client_url: &str, chann
     let url = format!("{}/{}", client_url, channel_login);
     let get_spade = client.get(url).send().await?;
     let spade = get_spade.text().await?;
-    get_spade_url(&spade, &client).await?;
-    let spade_url = SPADE_URL.lock().await;
+    let (tx, mut rx) = watch::channel(String::new());
+    get_spade_url(&spade, &client, tx).await?;
+    rx.changed().await.unwrap();
+    let spade_url = rx.borrow();
     let payload = json!([
         {
             "event": "minute-watched",

@@ -430,5 +430,6 @@ pub struct DropType {
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct ClaimCampaign {
     pub detailsURL: String,
-    pub id: String
+    pub id: String,
+    pub status: Option<String>,
 }
