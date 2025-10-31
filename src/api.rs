@@ -117,7 +117,8 @@ pub async fn send_watch (client: &Client, user_id: &str, client_url: &str, chann
     let (tx, mut rx) = watch::channel(String::new());
     get_spade_url(&spade, &client, tx).await?;
     rx.changed().await.unwrap();
-    let spade_url = rx.borrow();
+    let spade_url = rx.borrow().clone();
+    drop(rx);
     let payload = json!([
         {
             "event": "minute-watched",
