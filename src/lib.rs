@@ -46,7 +46,7 @@ use std::{error::Error, path::Path};
 use reqwest::{header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, CACHE_CONTROL, ORIGIN, PRAGMA, REFERER, USER_AGENT}, Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use tokio::{fs};
-mod error;
+pub mod error;
 use error::*;
 mod gql;
 mod api;
