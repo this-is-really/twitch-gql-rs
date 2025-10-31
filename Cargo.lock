@@ -1345,7 +1345,6 @@ name = "twitch-gql-rs"
 version = "0.1.9"
 dependencies = [
  "base64",
- "once_cell",
  "rand",
  "regex",
  "reqwest",
