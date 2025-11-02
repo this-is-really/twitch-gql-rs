@@ -60,7 +60,7 @@ pub mod structs;
 pub mod client_type;
 
 /// Represents a Twitch GraphQL client used to interact with Twitch's API.
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Debug, Default, Clone)]
 pub struct TwitchClient {
     #[serde(skip)]
     client: Client,
