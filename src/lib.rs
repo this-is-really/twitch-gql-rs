@@ -204,8 +204,8 @@ impl TwitchClient {
     }
 
     /// Retrieves a list of Twitch streams for a specific game, optionally filtering by drops-enabled streams
-    pub async fn get_game_directory(&self, game_slug: &str, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
-        let streams = game_directory(&self.client, game_slug, drops_enabled).await?;
+    pub async fn get_game_directory(&self, game_slug: &str, limit: u64, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
+        let streams = game_directory(&self.client, game_slug, limit, drops_enabled).await?;
         Ok(streams)
     }
 

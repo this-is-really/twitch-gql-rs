@@ -186,14 +186,14 @@ pub async fn playback_access_token (client: &Client, channel_login: &str) -> Res
     Ok(playback)
 }
 
-pub async fn game_directory (client: &Client, game_slug: &str, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
+pub async fn game_directory (client: &Client, game_slug: &str, limit: u64, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
     let filters = if drops_enabled {
         ["DROPS_ENABLED"]
     } else {
         [""]
     };
     let gql = GQLOperation::new("DirectoryPage_Game", "98a996c3c3ebb1ba4fd65d6671c6028d7ee8d615cb540b0731b3db2a911d3649").with_variables(json!({
-        "limit": 30,
+        "limit": limit,
         "slug": game_slug,
         "imageWidth": 50,
         "includeCostreaming": false,
