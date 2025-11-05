@@ -3,7 +3,7 @@ use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
-use crate::{error::TwitchError, structs::{AvailableDrops, CampaignDetails, ClaimDrop, CurrentDrop, Drops, GameDirectory, GetInventory, PlaybackAccessToken, StreamInfo}};
+use crate::{error::*, structs::*};
 
 pub const GQL_URL: &'static str = "https://gql.twitch.tv/gql";
 
@@ -62,7 +62,7 @@ fn get_value_from_vec (v: Value, name_vec: &[&str]) -> Result<Value, TwitchError
     Ok(current.clone())
 }
 
-pub async fn stream_info (client: &Client, channel_login: &str) -> Result<StreamInfo, TwitchError> {
+pub async fn stream_info (client: &Client, channel_login: &str) -> Result<StreamInfo, StreamInfoError> {
     let gql = GQLOperation::new("VideoPlayerStreamInfoOverlayChannel", "198492e0857f6aedead9665c81c5a06d67b25b58034649687124083ff288597d").with_variables(json!({
         "channel": channel_login
     }));
@@ -72,11 +72,11 @@ pub async fn stream_info (client: &Client, channel_login: &str) -> Result<Stream
     let gql = get_value_from_vec(gql, &["data", "user"])?;
     let stream_info: StreamInfo = match serde_json::from_value(gql) {
         Ok(v) => v,
-        Err(_) => return Err(TwitchError::ChannelNotFound)
+        Err(_) => return Err(StreamInfoError::ChannelNotFound)
     };
     Ok(stream_info)
 }
-pub async fn claim_drop (client: &Client, drop_instance_id: &str) -> Result<ClaimDrop, TwitchError> {
+pub async fn claim_drop (client: &Client, drop_instance_id: &str) -> Result<ClaimDrop, ClaimDropError> {
     let gql = GQLOperation::new("DropsPage_ClaimDropRewards", "a455deea71bdc9015b78eb49f4acfbce8baa7ccbedd28e549bb025bd0f751930").with_variables(json!({
         "input": {
             "dropInstanceID": drop_instance_id
@@ -90,16 +90,16 @@ pub async fn claim_drop (client: &Client, drop_instance_id: &str) -> Result<Clai
         if claim_drop.status == "ELIGIBLE_FOR_ALL" {
             return Ok(claim_drop)
         } else if claim_drop.status == "DROP_INSTANCE_ALREADY_CLAIMED" {
-            return Err(TwitchError::DropAlreadyClaimed);
+            return Err(ClaimDropError::DropAlreadyClaimed);
         } else {
             if let Ok(error) = get_value_from_vec(gql, &["data", "error"]) {
-                return Err(TwitchError::FailedClaimDrops(error.to_string()));
+                return Err(ClaimDropError::FailedClaimDrops(error.to_string()));
             } else {
-                return Err(TwitchError::FailedClaimDrops("Missing error field".into()));
+                return Err(ClaimDropError::FailedClaimDrops("Missing error field".into()));
             }
         }
     } else {
-        return Err(TwitchError::FailedClaimDrops("Missing claimDropRewards field".into()));
+        return Err(ClaimDropError::FailedClaimDrops("Missing claimDropRewards field".into()));
     }
     
 }
@@ -141,7 +141,7 @@ pub async fn campaign (client: &Client) -> Result<Drops, TwitchError> {
     Ok(drops)
 }
 
-pub async fn campaign_details (client: &Client, user_login: &str, drop_id: &str) -> Result<CampaignDetails, TwitchError> {
+pub async fn campaign_details (client: &Client, user_login: &str, drop_id: &str) -> Result<CampaignDetails, CampaignDetailsError> {
     let gql = GQLOperation::new("DropCampaignDetails", "039277bf98f3130929262cc7c6efd9c141ca3749cb6dca442fc8ead9a53f77c1").with_variables(json!({
         "channelLogin": user_login,
         "dropID": drop_id,
@@ -152,7 +152,7 @@ pub async fn campaign_details (client: &Client, user_login: &str, drop_id: &str)
     let details = get_value_from_vec(gql, &["data", "user", "dropCampaign"])?;
     let details: CampaignDetails = match serde_json::from_value(details) {
         Ok(v) => v,
-        Err(_) => return Err(TwitchError::CampaignNotFound)
+        Err(_) => return Err(CampaignDetailsError::CampaignNotFound)
     };
     Ok(details)
 }
@@ -186,7 +186,7 @@ pub async fn playback_access_token (client: &Client, channel_login: &str) -> Res
     Ok(playback)
 }
 
-pub async fn game_directory (client: &Client, game_slug: &str, limit: u64, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
+pub async fn game_directory (client: &Client, game_slug: &str, limit: u64, drops_enabled: bool) -> Result<Vec<GameDirectory>, GameDirectoryError> {
     let filters = if drops_enabled {
         ["DROPS_ENABLED"]
     } else {
@@ -212,7 +212,10 @@ pub async fn game_directory (client: &Client, game_slug: &str, limit: u64, drops
     let gql = client.post(GQL_URL).json(&gql).send().await?;
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
-    let streams = get_value_from_vec(gql, &["data", "game", "streams"])?;
+    let streams = match get_value_from_vec(gql, &["data", "game", "streams"]) {
+        Ok(value) => value,
+        Err(_) => return Err(GameDirectoryError::NoStreamsFound(game_slug.into()))
+    };
     let edges_vec = streams.get("edges").and_then(|v| v.as_array()).ok_or_else(|| TwitchError::MissingField("edges".to_string()))?;
     let mut directory_vec = Vec::new();
     for edge in edges_vec {
@@ -223,7 +226,7 @@ pub async fn game_directory (client: &Client, game_slug: &str, limit: u64, drops
     Ok(directory_vec)
 }
 
-pub async fn slug_redirect (client: &Client, game_name: &str) -> Result<String, TwitchError> {
+pub async fn slug_redirect (client: &Client, game_name: &str) -> Result<String, SlugError> {
     let gql = GQLOperation::new("DirectoryGameRedirect", "1f0300090caceec51f33c5e20647aceff9017f740f223c3c532ba6fa59f6b6cc").with_variables(json!({
         "name": game_name
     }));
@@ -233,7 +236,7 @@ pub async fn slug_redirect (client: &Client, game_name: &str) -> Result<String, 
     let slug = get_value_from_vec(gql, &["data", "game", "slug"])?;
     let slug = match slug.as_str() {
         Some(s) => s,
-        None => return Err(TwitchError::GameSlugParsingFailed)
+        None => return Err(SlugError::GameSlugParsingFailed)
     };
     Ok(slug.to_string())
 }

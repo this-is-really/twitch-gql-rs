@@ -109,7 +109,7 @@ impl TwitchClient {
             fs::write(&path, info.as_bytes()).await.unwrap();
             Ok(self)
         } else {
-            Err(SystemError::FileAlredyExists)
+            Err(SystemError::FileAlreadyExists)
         }
     }
 
@@ -192,7 +192,7 @@ impl TwitchClient {
     }
 
     /// Retrieves the slug for a given game name.
-    pub async fn get_slug (&self, game_name: &str) -> Result<String, TwitchError> {
+    pub async fn get_slug (&self, game_name: &str) -> Result<String, SlugError> {
         let slug = slug_redirect(&self.client, game_name).await?;
         Ok(slug)
     }
@@ -204,7 +204,7 @@ impl TwitchClient {
     }
 
     /// Retrieves a list of Twitch streams for a specific game, optionally filtering by drops-enabled streams
-    pub async fn get_game_directory(&self, game_slug: &str, limit: u64, drops_enabled: bool) -> Result<Vec<GameDirectory>, TwitchError> {
+    pub async fn get_game_directory(&self, game_slug: &str, limit: u64, drops_enabled: bool) -> Result<Vec<GameDirectory>, GameDirectoryError> {
         let streams = game_directory(&self.client, game_slug, limit, drops_enabled).await?;
         Ok(streams)
     }
@@ -216,12 +216,12 @@ impl TwitchClient {
     }
 
     /// Retrieves detailed information about a specific Twitch Drops campaign for a user
-    pub async fn get_campaign_details (&self, drop_id: &str) -> Result<CampaignDetails, TwitchError> {
+    pub async fn get_campaign_details (&self, drop_id: &str) -> Result<CampaignDetails, CampaignDetailsError> {
         if let Some(login) = &self.login {
             let details = campaign_details(&self.client, &login, drop_id).await?;
             return Ok(details)
         } else {
-            return Err(TwitchError::TwitchError("Not found login".into()));
+            return Err(CampaignDetailsError::TwitchError(TwitchError::TwitchError("Not found login".into())));
         }
     }
 
@@ -232,13 +232,13 @@ impl TwitchClient {
     }
 
     /// Retrieves the current stream information for a given Twitch channel.
-    pub async fn get_stream_info (&self, channel_login: &str) -> Result<StreamInfo, TwitchError> {
+    pub async fn get_stream_info (&self, channel_login: &str) -> Result<StreamInfo, StreamInfoError> {
         let stream_info = stream_info(&self.client, channel_login).await?;
         Ok(stream_info)
     }
 
     /// Claims a Twitch drop for the given drop instance ID
-    pub async fn claim_drop (&self, drop_instance_id: &str) -> Result<ClaimDrop, TwitchError> {
+    pub async fn claim_drop (&self, drop_instance_id: &str) -> Result<ClaimDrop, ClaimDropError> {
         let claim = claim_drop(&self.client, drop_instance_id).await?;
         Ok(claim)
     }

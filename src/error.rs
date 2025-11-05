@@ -2,7 +2,7 @@ use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum SystemError {
     #[error("The file already exists")]
-    FileAlredyExists,
+    FileAlreadyExists,
     #[error("An error occurred during serialization: {0}")]
     SerializationProblem(serde_json::Error),
     #[error("An error occurred during deserialization: {0}")]
@@ -27,14 +27,106 @@ pub enum TwitchError {
     ReqwestProblem(#[from] reqwest::Error),
     #[error("Twitch error: {0}")]
     TwitchError(String),
-    #[error("The specified channel does not exist or another error occurred.")]
-    ChannelNotFound,
-    #[error("The specified campaign does not exist or another error occurred.")]
-    CampaignNotFound,
-    #[error("Failed to parse game slug from GraphQL response.")]
-    GameSlugParsingFailed,
+}
+
+#[derive(Debug, Error)]
+pub enum ClaimDropError {
     #[error("Failed to claim drop: {0}")]
     FailedClaimDrops(String),
     #[error("Drop already claimed")]
     DropAlreadyClaimed,
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError)
+}
+
+impl From<reqwest::Error> for ClaimDropError {
+    fn from(e: reqwest::Error) -> Self {
+        ClaimDropError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for ClaimDropError {
+    fn from(e: serde_json::Error) -> Self {
+        ClaimDropError::TwitchError(e.into())
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum SlugError {
+    #[error("Failed to parse game slug from GraphQL response.")]
+    GameSlugParsingFailed,
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError)
+}
+
+impl From<reqwest::Error> for SlugError {
+    fn from(e: reqwest::Error) -> Self {
+        SlugError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for SlugError {
+    fn from(e: serde_json::Error) -> Self {
+        SlugError::TwitchError(e.into())
+    }
+}
+
+#[derive(Debug, Error)]
+pub  enum CampaignDetailsError {
+    #[error("The specified campaign does not exist or another error occurred.")]
+    CampaignNotFound,
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError)
+}
+
+impl From<reqwest::Error> for CampaignDetailsError {
+    fn from(e: reqwest::Error) -> Self {
+        CampaignDetailsError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for CampaignDetailsError {
+    fn from(e: serde_json::Error) -> Self {
+        CampaignDetailsError::TwitchError(e.into())
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum StreamInfoError {
+    #[error("The specified channel does not exist or another error occurred.")]
+    ChannelNotFound,
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError)
+}
+
+impl From<reqwest::Error> for StreamInfoError {
+    fn from(e: reqwest::Error) -> Self {
+        StreamInfoError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for StreamInfoError {
+    fn from(e: serde_json::Error) -> Self {
+        StreamInfoError::TwitchError(e.into())
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum GameDirectoryError {
+    #[error("No streams found for the game slug: {0}")]
+    NoStreamsFound(String),
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError),
+}
+
+impl From<reqwest::Error> for GameDirectoryError {
+    fn from(e: reqwest::Error) -> Self {
+        GameDirectoryError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for GameDirectoryError {
+    fn from(e: serde_json::Error) -> Self {
+        GameDirectoryError::TwitchError(e.into())
+    }
 }
