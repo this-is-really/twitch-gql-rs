@@ -157,14 +157,17 @@ pub async fn campaign_details (client: &Client, user_login: &str, drop_id: &str)
     Ok(details)
 }
 
-pub async fn available_drops (client: &Client, channel_id: &str) -> Result<AvailableDrops, TwitchError> {
+pub async fn available_drops (client: &Client, channel_id: &str) -> Result<AvailableDrops, AvailableDropsError> {
     let gql = GQLOperation::new("DropsHighlightService_AvailableDrops", "9a62a09bce5b53e26e64a671e530bc599cb6aab1e5ba3cbd5d85966d3940716f").with_variables(json!({
         "channelID": channel_id
     }));
     let gql = client.post(GQL_URL).json(&gql).send().await?;
     check_response_error(&gql).await?;
     let gql: Value = gql.json().await?;
-    let channel = get_value_from_vec(gql, &["data", "channel"])?;
+    let channel = match get_value_from_vec(gql, &["data", "channel"]) {
+        Ok(value) => value,
+        Err(_) => return Err(AvailableDropsError::ChannelNotFound)
+    };
     let available_drops: AvailableDrops = serde_json::from_value(channel)?;
     Ok(available_drops)
 }

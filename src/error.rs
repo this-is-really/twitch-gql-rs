@@ -16,6 +16,26 @@ pub enum SystemError {
 }
 
 #[derive(Debug, Error)]
+pub enum AuthError {
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError),
+    #[error("The device authorization code has expired")]
+    DeviceTokenExpired
+}
+
+impl From<reqwest::Error> for AuthError {
+    fn from(e: reqwest::Error) -> Self {
+        AuthError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for AuthError {
+    fn from(e: serde_json::Error) -> Self {
+        AuthError::TwitchError(e.into())
+    }
+}
+
+#[derive(Debug, Error)]
 pub enum TwitchError {
     #[error("Twitch response JSON is missing the field: {0}")]
     MissingField(String),
@@ -128,5 +148,25 @@ impl From<reqwest::Error> for GameDirectoryError {
 impl From<serde_json::Error> for GameDirectoryError {
     fn from(e: serde_json::Error) -> Self {
         GameDirectoryError::TwitchError(e.into())
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum AvailableDropsError {
+    #[error("The specified channel does not exist or another error occurred.")]
+    ChannelNotFound,
+    #[error("{0}")]
+    TwitchError(#[from] TwitchError),
+}
+
+impl From<reqwest::Error> for AvailableDropsError {
+    fn from(e: reqwest::Error) -> Self {
+        AvailableDropsError::TwitchError(e.into())
+    }
+}
+
+impl From<serde_json::Error> for AvailableDropsError {
+    fn from(e: serde_json::Error) -> Self {
+        AvailableDropsError::TwitchError(e.into())
     }
 }

@@ -54,7 +54,7 @@ pub struct PlaybackAccessToken {
 //main
 pub struct AvailableDrops {
     pub id: String,
-    pub viewerDropCampaigns: Vec<ViewerDropCampaigns>
+    pub viewerDropCampaigns: Option<Vec<ViewerDropCampaigns>>
 }
 
 /// A single viewer-facing drop campaign (summary) available to watch/claim.

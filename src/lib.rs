@@ -158,7 +158,7 @@ impl TwitchClient {
 
     /// Authenticates the `TwitchClient`.
     /// Starts a token polling cycle via Device Flow using the passed `DeviceAuth`.
-    pub async fn auth (&mut self, device_auth: DeviceAuth) -> Result<(), TwitchError> {
+    pub async fn auth (&mut self, device_auth: DeviceAuth) -> Result<(), AuthError> {
         let auth = poll_device_auth(&self.client, &self.client_id, device_auth).await?;
         self.access_token = Some(auth.0);
         self.user_id = Some(auth.1);
@@ -210,7 +210,7 @@ impl TwitchClient {
     }
 
     /// Returns a list of available Twitch Drops and their progress for a given channel.
-    pub async fn get_available_drops_for_channel (&self, channel_id: &str) -> Result<AvailableDrops, TwitchError> {
+    pub async fn get_available_drops_for_channel (&self, channel_id: &str) -> Result<AvailableDrops, AvailableDropsError> {
         let drops = available_drops(&self.client, channel_id).await?;
         Ok(drops)
     }
