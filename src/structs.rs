@@ -316,7 +316,7 @@ pub struct GetInventory {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct Inventory {
-    pub dropCampaignsInProgress: Vec<DropCampaignsInProgress>
+    pub dropCampaignsInProgress: Option<Vec<DropCampaignsInProgress>>,
 }
 
 /// A campaign that the user is currently participating in (in-progress info).
