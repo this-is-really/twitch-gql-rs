@@ -94,7 +94,7 @@ async fn _watch_stream (client: &Client, channel_login: &str) -> Result<(), Twit
 
 async fn get_spade_url (spade: &str, client: &Client, tx: Sender<String>) -> Result<(), TwitchError> {
     let settings_pattern = Regex::new(r#"src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)""#).unwrap();
-    let spade_pattern = Regex::new(r#""spade_?url": ?"(https://video-edge-[.\w\-/]+\.ts(?:\?allow_stream=true)?)""#).unwrap();
+    let spade_pattern = Regex::new(r#""(?:beacon|spade)_?url": ?"(https://[.\w\-/]+)""#).unwrap();
     
     if let Some(caps) = spade_pattern.captures(&spade) {
         let spade_url = caps.get(1).unwrap().as_str();
