@@ -64,9 +64,9 @@ pub mod client_type;
 pub struct TwitchClient {
     #[serde(skip)]
     client: Client,
-    client_id: String,
-    user_agent: String,
-    client_url: String,
+    pub client_id: String,
+    pub user_agent: String,
+    pub client_url: String,
     pub user_id: Option<String>,
     pub login: Option<String>,
     pub access_token: Option<String>,
