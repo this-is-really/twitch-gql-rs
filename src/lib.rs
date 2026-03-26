@@ -64,7 +64,6 @@ pub mod client_type;
 pub struct TwitchClient {
     #[serde(skip)]
     client: Client,
-    pub proxy: Option<String>,
     pub client_id: String,
     pub user_agent: String,
     pub client_url: String,
@@ -98,11 +97,11 @@ async fn get_headers(
     Ok(headers)
 }
 
-async fn build_client (twitch_client: &TwitchClient) -> Result<Client, SystemError> {
+async fn build_client (twitch_client: &TwitchClient, proxy: &Option<String>) -> Result<Client, SystemError> {
     let headers = get_headers(&twitch_client.client_id, &twitch_client.user_agent, &twitch_client.access_token).await?;
     let mut builder = ClientBuilder::new().default_headers(headers);
 
-    if let Some(pr) = &twitch_client.proxy {
+    if let Some(pr) = &proxy {
         let proxy = Proxy::all(pr).map_err(|e| SystemError::InvalidProxy { proxy_url: pr.to_string(), details: e.to_string() })?;
         builder = builder.proxy(proxy);
     }
@@ -130,7 +129,7 @@ impl TwitchClient {
 
     /// Loads the structure from a JSON file at the specified path.
     /// Returns an error if the file is not found or if deserialization fails.
-    pub async fn load_from_file(path: &Path) -> Result<Self, SystemError> {
+    pub async fn load_from_file(path: &Path, proxy: &Option<String>) -> Result<Self, SystemError> {
         if !path.exists() {
             return Err(SystemError::FileNotFound);
         }
@@ -141,7 +140,7 @@ impl TwitchClient {
             Err(e) => return Err(SystemError::DeserializationProblem(e)),
         };
 
-        let client = build_client(&load).await?;
+        let client = build_client(&load, proxy).await?;
 
         load.client = client;
 
@@ -177,10 +176,9 @@ impl TwitchClient {
     /// ).await?;
     /// ```
     ///
-    pub async fn new(client_type: &ClientType, proxy_str: Option<String>) -> Result<Self, SystemError> {
+    pub async fn new(client_type: &ClientType, proxy_str: &Option<String>) -> Result<Self, SystemError> {
         let temp = TwitchClient {
             client: Client::new(),
-            proxy: proxy_str.clone(),
             client_id: client_type.client_id.to_string(),
             user_agent: client_type.user_agent.to_string(),
             client_url: client_type.client_url.to_string(),
@@ -189,11 +187,10 @@ impl TwitchClient {
             access_token: None
         };
 
-        let client = build_client(&temp).await?;
+        let client = build_client(&temp, proxy_str).await?;
 
         Ok(TwitchClient {
             client,
-            proxy: proxy_str,
             client_id: client_type.client_id.to_string(),
             user_agent: client_type.user_agent.to_string(),
             client_url: client_type.client_url.to_string(),
