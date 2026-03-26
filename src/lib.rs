@@ -43,7 +43,7 @@
 
 use std::{error::Error, path::Path};
 
-use reqwest::{header::{HeaderMap, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, CACHE_CONTROL, ORIGIN, PRAGMA, REFERER, USER_AGENT}, Client, ClientBuilder};
+use reqwest::{Client, ClientBuilder, Proxy, header::{ACCEPT, ACCEPT_LANGUAGE, CACHE_CONTROL, HeaderMap, HeaderValue, ORIGIN, PRAGMA, REFERER, USER_AGENT}};
 use serde::{Deserialize, Serialize};
 use tokio::{fs};
 pub mod error;
@@ -64,6 +64,7 @@ pub mod client_type;
 pub struct TwitchClient {
     #[serde(skip)]
     client: Client,
+    pub proxy: Option<String>,
     pub client_id: String,
     pub user_agent: String,
     pub client_url: String,
@@ -75,7 +76,7 @@ pub struct TwitchClient {
 async fn get_headers(
     client_id: &str,
     user_agent: &str,
-    access_token: Option<&str>,
+    access_token: &Option<String>,
 ) -> Result<HeaderMap, Box<dyn Error>> {
     let device_id = uuid::Uuid::new_v4();
     let mut headers = HeaderMap::new();
@@ -97,17 +98,31 @@ async fn get_headers(
     Ok(headers)
 }
 
+async fn build_client (twitch_client: &TwitchClient) -> Result<Client, SystemError> {
+    let headers = get_headers(&twitch_client.client_id, &twitch_client.user_agent, &twitch_client.access_token).await?;
+    let mut builder = ClientBuilder::new().default_headers(headers);
+
+    if let Some(pr) = &twitch_client.proxy {
+        let proxy = Proxy::all(pr).map_err(|e| SystemError::InvalidProxy { proxy_url: pr.to_string(), details: e.to_string() })?;
+        builder = builder.proxy(proxy);
+    }
+
+    let client = builder.build()?;
+
+    Ok(client)
+}
+
 impl TwitchClient {
     /// Saves the current state of the structure to a JSON file at the specified path.
     /// Returns an error if the file already exists or if serialization fails.
-    pub async fn save_file(self, path: &Path) -> Result<Self, SystemError> {
+    pub async fn save_file(&self, path: &Path) -> Result<(), SystemError> {
         if !path.exists() {
             let info = match serde_json::to_string_pretty(&self) {
                 Ok(s) => s,
                 Err(e) => return Err(SystemError::SerializationProblem(e)),
             };
-            fs::write(&path, info.as_bytes()).await.unwrap();
-            Ok(self)
+            fs::write(&path, info.as_bytes()).await?;
+            Ok(())
         } else {
             Err(SystemError::FileAlreadyExists)
         }
@@ -120,26 +135,65 @@ impl TwitchClient {
             return Err(SystemError::FileNotFound);
         }
 
-        let load = fs::read_to_string(&path).await.unwrap();
+        let load = fs::read_to_string(&path).await?;
         let mut load: TwitchClient = match serde_json::from_str(&load) {
             Ok(s) => s,
             Err(e) => return Err(SystemError::DeserializationProblem(e)),
         };
 
-        let headers = get_headers(&load.client_id, &load.user_agent, load.access_token.as_deref()).await?;
-        let client = ClientBuilder::new().default_headers(headers).build()?;
+        let client = build_client(&load).await?;
+
         load.client = client;
 
         Ok(load)
     }
 
     /// Creates a new `TwitchClient` instance without an access token.
-    pub async fn new(client_type: &ClientType) -> Result<Self, SystemError> {
-        let headers = get_headers(&client_type.client_id, &client_type.user_agent, None).await?;
-        let client = ClientBuilder::new().default_headers(headers).build()?;
+    ///
+    /// # Proxy support
+    ///
+    /// You can optionally pass a proxy URL. Supported formats:
+    ///
+    /// - HTTP proxy: `"http://127.0.0.1:8080"`
+    /// - HTTP proxy with authentication: `"http://username:password@127.0.0.1:8080"`
+    /// - SOCKS5 proxy: `"socks5://127.0.0.1:1080"`
+    /// - SOCKS5 with authentication: `"socks5://username:password@127.0.0.1:1080"`
+    ///
+    /// If the proxy string is invalid, [`SystemError::InvalidProxy`] will be returned.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// // Without proxy
+    /// let client = TwitchClient::new(&client_type, None).await?;
+    ///
+    /// // With HTTP proxy
+    /// let client = TwitchClient::new(&client_type, Some("http://127.0.0.1:8080".to_string())).await?;
+    ///
+    /// // With authenticated proxy
+    /// let client = TwitchClient::new(
+    ///     &client_type,
+    ///     Some("http://user:pass@192.168.1.50:3128".to_string())
+    /// ).await?;
+    /// ```
+    ///
+    pub async fn new(client_type: &ClientType, proxy_str: Option<String>) -> Result<Self, SystemError> {
+        let temp = TwitchClient {
+            client: Client::new(),
+            proxy: proxy_str.clone(),
+            client_id: client_type.client_id.to_string(),
+            user_agent: client_type.user_agent.to_string(),
+            client_url: client_type.client_url.to_string(),
+            user_id: None,
+            login: None,
+            access_token: None
+        };
+
+        let client = build_client(&temp).await?;
 
         Ok(TwitchClient {
             client,
+            proxy: proxy_str,
             client_id: client_type.client_id.to_string(),
             user_agent: client_type.user_agent.to_string(),
             client_url: client_type.client_url.to_string(),

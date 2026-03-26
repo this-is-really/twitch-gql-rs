@@ -3,6 +3,8 @@ use thiserror::Error;
 pub enum SystemError {
     #[error("The file already exists")]
     FileAlreadyExists,
+    #[error("IO error: {0}")]
+    IoError(#[from] tokio::io::Error),
     #[error("An error occurred during serialization: {0}")]
     SerializationProblem(serde_json::Error),
     #[error("An error occurred during deserialization: {0}")]
@@ -13,6 +15,11 @@ pub enum SystemError {
     HeadersError(#[from] Box<dyn std::error::Error>),
     #[error("Error creating client: {0}")]
     ClientBuilderError(#[from] reqwest::Error),
+    #[error("Invalid proxy URL: '{proxy_url}'. {details}")]
+    InvalidProxy {
+        proxy_url: String,
+        details: String,
+    },
 }
 
 #[derive(Debug, Error)]
