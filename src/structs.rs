@@ -257,8 +257,8 @@ pub struct CurrentDrop {
 #[allow(non_snake_case)]
 #[derive(Deserialize, Serialize, Debug, Default, Clone, PartialEq, Eq, Hash)]
 pub struct CurrentGame {
-    displayName: String,
-    id: String
+    pub displayName: String,
+    pub id: String
 }
 
 //get_stream_info
