@@ -67,7 +67,7 @@ pub struct ViewerDropCampaigns {
     pub imageURL: String,
     pub endAt: String,
     pub timeBasedDrops: Vec<TimeBasedDrops>,
-    pub game: GameDrops
+    pub game: Option<GameDrops>
 }
 
 /// Minimal game info attached to drops (id + name)
