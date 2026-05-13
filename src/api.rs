@@ -92,7 +92,7 @@ async fn _watch_stream (client: &Client, channel_login: &str) -> Result<(), Twit
     Ok(())
 }
 
-async fn get_spade_url (spade: &str, client: &Client, tx: Sender<String>) -> Result<(), TwitchError> {
+async fn _get_spade_url (spade: &str, client: &Client, tx: Sender<String>) -> Result<(), TwitchError> {
     let settings_pattern = Regex::new(r#"src="(https://[\w.]+/config/settings\.[0-9a-f]{32}\.js)""#).unwrap();
     let spade_pattern = Regex::new(r#""(?:beacon|spade)_?url": ?"(https://[.\w\-/]+)""#).unwrap();
     
@@ -116,12 +116,12 @@ async fn get_spade_url (spade: &str, client: &Client, tx: Sender<String>) -> Res
     }
 }
 
-pub async fn send_watch (client: &Client, user_id: &str, client_url: &str, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
+pub async fn _send_watch (client: &Client, user_id: &str, client_url: &str, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
     let url = format!("{}/{}", client_url, channel_login);
     let get_spade = client.get(url).send().await?;
     let spade = get_spade.text().await?;
     let (tx, mut rx) = watch::channel(String::new());
-    get_spade_url(&spade, &client, tx).await?;
+    _get_spade_url(&spade, &client, tx).await?;
     rx.changed().await.unwrap();
     let spade_url = rx.borrow().clone();
     drop(rx);

@@ -220,7 +220,7 @@ impl TwitchClient {
     /// Sends a "watch" event for a given channel.
     pub async fn send_watch(&self, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
         if let Some(user_id) = &self.user_id {
-            send_watch(&self.client, &user_id, &self.client_url, channel_login, broadcast_id, channel_id).await?;
+            send_watch_gql(&self.client, user_id, channel_login, channel_id, broadcast_id, None, None).await?;
         } else {
             return Err(TwitchError::TwitchError("Not found user_id".into()));
         }
@@ -297,17 +297,20 @@ impl TwitchClient {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::time::Duration;
+
+use tokio::time::sleep;
+
+use super::*;
 
     #[tokio::test]
     async fn test() -> Result<(), Box<dyn Error>> {
-        let mut client = TwitchClient::new(&ClientType::android_app(), &None).await?;
-        let auth = client.request_device_auth().await?;
-        println!("{} {}", auth.verification_uri, auth.user_code);
-        client.auth(auth).await?;
-
         let path = Path::new("save.json");
         if !path.exists() {
+            let mut client = TwitchClient::new(&ClientType::android_app(), &None).await?;
+            let auth = client.request_device_auth().await?;
+            println!("{} {}", auth.verification_uri, auth.user_code);
+            client.auth(auth).await?;
             client.save_file(path).await?;
         }
 
@@ -315,8 +318,10 @@ mod tests {
         let slug = client.get_slug("Marvel Rivals").await?;
         let game_directory = client.get_game_directory(&slug, 10, true).await?;
         let first_stream = game_directory.first().unwrap();
-        let drop = client.get_current_drop_progress_on_channel(&first_stream.broadcaster.login).await?;
-        println!("{:#?}", drop);
-        Ok(())
+        println!("Watching stream: {} (ID: {})", first_stream.broadcaster.login, first_stream.id);
+        loop {
+            client.send_watch(&first_stream.broadcaster.login, &first_stream.id, &first_stream.broadcaster.id).await?;
+            sleep(Duration::from_secs(20)).await;
+        }
     }
 }
