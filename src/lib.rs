@@ -277,8 +277,8 @@ impl TwitchClient {
     }
 
     /// Retrieves the current drop progress for a user on a specific Twitch channel.
-    pub async fn get_current_drop_progress_on_channel (&self, channel_login: &str, channel_id: &str) -> Result<CurrentDrop, TwitchError> {
-        let current = current_drop(&self.client, channel_login, channel_id).await?;
+    pub async fn get_current_drop_progress_on_channel (&self, channel_login: &str) -> Result<CurrentDrop, TwitchError> {
+        let current = current_drop(&self.client, channel_login).await?;
         Ok(current)
     }
 
@@ -301,6 +301,22 @@ mod tests {
 
     #[tokio::test]
     async fn test() -> Result<(), Box<dyn Error>> {
+        let mut client = TwitchClient::new(&ClientType::android_app(), &None).await?;
+        let auth = client.request_device_auth().await?;
+        println!("{} {}", auth.verification_uri, auth.user_code);
+        client.auth(auth).await?;
+
+        let path = Path::new("save.json");
+        if !path.exists() {
+            client.save_file(path).await?;
+        }
+
+        let client = TwitchClient::load_from_file(path, &None).await?;
+        let slug = client.get_slug("Marvel Rivals").await?;
+        let game_directory = client.get_game_directory(&slug, 10, true).await?;
+        let first_stream = game_directory.first().unwrap();
+        let drop = client.get_current_drop_progress_on_channel(&first_stream.broadcaster.login).await?;
+        println!("{:#?}", drop);
         Ok(())
     }
 }

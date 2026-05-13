@@ -116,9 +116,8 @@ pub async fn inventory (client: &Client) -> Result<GetInventory, TwitchError> {
     Ok(inventory)
 }
 
-pub async fn current_drop (client: &Client, channel_login: &str, channel_id: &str) -> Result<CurrentDrop, TwitchError> {
+pub async fn current_drop (client: &Client, channel_login: &str) -> Result<CurrentDrop, TwitchError> {
     let gql = GQLOperation::new("DropCurrentSessionContext", "4d06b702d25d652afb9ef835d2a550031f1cf762b193523a92166f40ea3d142b").with_variables(json!({
-        "channelID": channel_id,
         "channelLogin": channel_login,
     }));
     let gql = client.post(GQL_URL).json(&gql).send().await?;
