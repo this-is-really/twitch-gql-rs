@@ -89,6 +89,7 @@ fn gzip_compress_then_base64(data: &[u8]) -> String {
 }
 
 pub async fn send_watch_gql (client: &Client, user_id: &str, channel_login: &str, channel_id: &str, broadcast_id: &str, game_name: Option<&str>, game_id: Option<&str>) -> Result<(), TwitchError> {
+    let user_id: u64 = user_id.parse().map_err(|_| TwitchError::TwitchError("Invalid user_id".into()))?;
     let event = json!({
         "event": "minute-watched",
         "properties": {
@@ -114,7 +115,9 @@ pub async fn send_watch_gql (client: &Client, user_id: &str, channel_login: &str
 
     let variables = json!({
         "input": {
-            "data": compressed_b64
+            "data": compressed_b64,
+            "repository": "twilight",
+            "encoding": "GZIP_B64",
         }
     });
 

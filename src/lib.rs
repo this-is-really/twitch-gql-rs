@@ -67,6 +67,7 @@ pub struct TwitchClient {
     pub client_id: String,
     pub user_agent: String,
     pub client_url: String,
+    pub device_id: String,
     pub user_id: Option<String>,
     pub login: Option<String>,
     pub access_token: Option<String>,
@@ -75,9 +76,9 @@ pub struct TwitchClient {
 async fn get_headers(
     client_id: &str,
     user_agent: &str,
+    device_id: &str,
     access_token: &Option<String>,
 ) -> Result<HeaderMap, Box<dyn Error>> {
-    let device_id = uuid::Uuid::new_v4();
     let mut headers = HeaderMap::new();
 
     headers.insert(ACCEPT, HeaderValue::from_str("application/json")?);
@@ -98,7 +99,7 @@ async fn get_headers(
 }
 
 async fn build_client (twitch_client: &TwitchClient, proxy: &Option<String>) -> Result<Client, SystemError> {
-    let headers = get_headers(&twitch_client.client_id, &twitch_client.user_agent, &twitch_client.access_token).await?;
+    let headers = get_headers(&twitch_client.client_id, &twitch_client.user_agent, &twitch_client.device_id, &twitch_client.access_token).await?;
     let mut builder = ClientBuilder::new().default_headers(headers);
 
     if let Some(pr) = &proxy {
@@ -177,11 +178,13 @@ impl TwitchClient {
     /// ```
     ///
     pub async fn new(client_type: &ClientType, proxy_str: &Option<String>) -> Result<Self, SystemError> {
+        let device_id = uuid::Uuid::new_v4().to_string();
         let temp = TwitchClient {
             client: Client::new(),
             client_id: client_type.client_id.to_string(),
             user_agent: client_type.user_agent.to_string(),
             client_url: client_type.client_url.to_string(),
+            device_id: device_id.clone(),
             user_id: None,
             login: None,
             access_token: None
@@ -194,6 +197,7 @@ impl TwitchClient {
             client_id: client_type.client_id.to_string(),
             user_agent: client_type.user_agent.to_string(),
             client_url: client_type.client_url.to_string(),
+            device_id,
             user_id: None,
             login: None,
             access_token: None,
@@ -218,9 +222,9 @@ impl TwitchClient {
     } 
 
     /// Sends a "watch" event for a given channel.
-    pub async fn send_watch(&self, channel_login: &str, broadcast_id: &str, channel_id: &str) -> Result<(), TwitchError> {
+    pub async fn send_watch(&self, channel_login: &str, broadcast_id: &str, channel_id: &str, game_name: Option<&str>, game_id: Option<&str>) -> Result<(), TwitchError> {
         if let Some(user_id) = &self.user_id {
-            send_watch_gql(&self.client, user_id, channel_login, channel_id, broadcast_id, None, None).await?;
+            send_watch_gql(&self.client, user_id, channel_login, channel_id, broadcast_id, game_name, game_id).await?;
         } else {
             return Err(TwitchError::TwitchError("Not found user_id".into()));
         }
@@ -307,7 +311,7 @@ use super::*;
     async fn test() -> Result<(), Box<dyn Error>> {
         let path = Path::new("save.json");
         if !path.exists() {
-            let mut client = TwitchClient::new(&ClientType::android_app(), &None).await?;
+            let mut client = TwitchClient::new(&ClientType::web(), &None).await?;
             let auth = client.request_device_auth().await?;
             println!("{} {}", auth.verification_uri, auth.user_code);
             client.auth(auth).await?;
@@ -320,8 +324,9 @@ use super::*;
         let first_stream = game_directory.first().unwrap();
         println!("Watching stream: {} (ID: {})", first_stream.broadcaster.login, first_stream.id);
         loop {
-            client.send_watch(&first_stream.broadcaster.login, &first_stream.id, &first_stream.broadcaster.id).await?;
-            sleep(Duration::from_secs(20)).await;
+            client.send_watch(&first_stream.broadcaster.login, &first_stream.id, &first_stream.broadcaster.id, Some(&first_stream.game.name), Some(&first_stream.game.id)).await?;
+            println!("Sent watch event for stream: {} (ID: {})", first_stream.broadcaster.login, first_stream.id);
+            sleep(Duration::from_secs(59)).await;
         }
     }
 }
