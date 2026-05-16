@@ -243,7 +243,7 @@ pub async fn campaign_details (client: &Client, user_login: &str, drop_id: &str)
 }
 
 pub async fn available_drops (client: &Client, channel_id: &str) -> Result<AvailableDrops, AvailableDropsError> {
-    let gql = GQLOperation::new("DropsHighlightService_AvailableDrops").with_extensions("9a62a09bce5b53e26e64a671e530bc599cb6aab1e5ba3cbd5d85966d3940716f").with_variables(json!({
+    let gql = GQLOperation::new("DropsHighlightService_AvailableDrops").with_extensions("782dad0f032942260171d2d80a654f88bdd0c5a9dddc392e9bc92218a0f42d20").with_variables(json!({
         "channelID": channel_id
     }));
     let gql = client.post(GQL_URL).json(&gql).send().await?;
@@ -280,7 +280,7 @@ pub async fn game_directory (client: &Client, game_slug: &str, limit: u64, drops
     } else {
         [""]
     };
-    let gql = GQLOperation::new("DirectoryPage_Game").with_extensions("98a996c3c3ebb1ba4fd65d6671c6028d7ee8d615cb540b0731b3db2a911d3649").with_variables(json!({
+    let gql = GQLOperation::new("DirectoryPage_Game").with_extensions("cb5dc816e139dcb8a118f14b4b677d59abc224a4b016c4bc2bb00a47fe0ddec4").with_variables(json!({
         "limit": limit,
         "slug": game_slug,
         "imageWidth": 50,
